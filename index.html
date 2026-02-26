@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dio' - Scanner Soal Turunan</title>
+
+    <!-- Tambahan: marked.js untuk render Markdown dengan benar (**tebal**, *miring*, list, dll) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 1000px;
+            height: 90vh;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+        .chat-header {
+            background: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .header-text h1 {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+            color: #1a2634;
+            font-weight: 500;
+        }
+        .header-text p {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 20px 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #fafbfc;
+        }
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 90%;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.user {
+            align-self: flex-end;
+        }
+        .message.assistant {
+            align-self: flex-start;
+        }
+        .message-header {
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+            color: #868e96;
+            padding-left: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .message-content {
+            padding: 14px 18px;
+            border-radius: 18px;
+            font-size: 0.97rem;
+            line-height: 1.55;
+            word-wrap: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .user .message-content {
+            background: #e9ecef;
+            color: #212529;
+            border-bottom-right-radius: 4px;
+        }
+        .assistant .message-content {
+            background: white;
+            color: #212529;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        /* ── Styling Markdown yang dihasilkan oleh marked ── */
+        .message-content strong { font-weight: 600; }
+        .message-content em { font-style: italic; }
+        .message-content code {
+            background: #f1f3f5;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .message-content pre {
+            background: #f1f3f5;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .message-content ul, .message-content ol {
+            padding-left: 24px;
+            margin: 10px 0;
+        }
+        .message-content li { margin-bottom: 6px; }
+
+        /* Responsif untuk ponsel */
+        @media (max-width: 640px) {
+            body { padding: 0; }
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .chat-header { padding: 14px 18px; }
+            .chat-messages { padding: 16px 18px; }
+            .chat-input-container { padding: 16px 18px; }
+            .message { max-width: 94%; }
+            .upload-area { padding: 24px 16px; }
+        }
+
+        /* sisanya style tetap sama seperti aslinya */
+        .math-expression {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            border-left: 3px solid #adb5bd;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .solution-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        .solution-step {
+            padding: 8px 0;
+            border-bottom: 1px dashed #dee2e6;
+            color: #495057;
+        }
+        .solution-step:last-child { border-bottom: none; }
+        .timestamp {
+            font-size: 0.65rem;
+            color: #adb5bd;
+            margin: 4px 10px 0;
+        }
+        .chat-input-container {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+        .upload-area {
+            border: 2px dashed #ced4da;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 15px;
+        }
+        .upload-area:hover {
+            border-color: #868e96;
+            background: #f1f3f5;
+        }
+        .upload-icon { font-size: 40px; margin-bottom: 10px; color: #6c757d; }
+        .upload-text { color: #495057; font-size: 0.95rem; margin-bottom: 8px; }
+        .upload-hint { color: #868e96; font-size: 0.8rem; }
+        .image-preview-section {
+            display: none;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+        .image-preview-section.active { display: block; }
+        .preview-container { display: flex; align-items: center; gap: 15px; }
+        .preview-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #dee2e6;
+        }
+        .preview-info { flex: 1; }
+        .preview-info h4 { color: #212529; margin-bottom: 4px; font-weight: 500; }
+        .preview-info p { color: #6c757d; font-size: 0.85rem; }
+        .remove-image {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .remove-image:hover { background: #dc3545; color: white; }
+        .action-buttons { display: flex; gap: 12px; justify-content: flex-end; }
+        .secondary-btn {
+            padding: 12px 24px;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 40px;
+            color: #495057;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .secondary-btn:hover:not(:disabled) {
+            background: #f1f3f5;
+            border-color: #adb5bd;
+        }
+        #send-button {
+            padding: 12px 32px;
+            background: #2c3e50;
+            border: none;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #send-button:hover:not(:disabled) { background: #1a2634; }
+        #send-button:disabled { background: #adb5bd; cursor: not-allowed; }
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 14px 18px;
+            background: white;
+            border-radius: 18px;
+            width: fit-content;
+            border: 1px solid #e9ecef;
+        }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #adb5bd;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+            30% { transform: translateY(-8px); opacity: 1; }
+        }
+        .error-message {
+            color: #dc3545;
+            text-align: center;
+            padding: 12px 20px;
+            background: #f8d7da;
+            border-radius: 8px;
+            margin: 10px 30px;
+            border: 1px solid #f5c6cb;
+            font-size: 0.9rem;
+        }
+        .system-note {
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 10px 20px;
+            margin: 0 30px 10px;
+            color: #495057;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+        }
+        .modal-close {
+            position: absolute;
+            top: 20px; right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            font-weight: 300;
+        }
+
+        /* Welcome modal style (tetap sama) */
+        .welcome-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+        }
+        .welcome-modal.active { opacity: 1; visibility: visible; }
+        .welcome-content {
+            background: white;
+            width: 90%;
+            max-width: 460px;
+            border-radius: 20px;
+            padding: 32px 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+            position: relative;
+            text-align: center;
+        }
+        .welcome-close {
+            position: absolute;
+            top: 16px; right: 20px;
+            font-size: 36px;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+        .welcome-icon { font-size: 4.2rem; margin-bottom: 20px; color: #3b82f6; font-weight: bold; }
+        .welcome-content h2 { font-size: 1.85rem; margin-bottom: 12px; color: #1e293b; }
+        .welcome-content p { color: #475569; line-height: 1.6; margin-bottom: 24px; }
+        .welcome-list { text-align: left; margin: 16px 0 24px 32px; color: #334155; }
+        .welcome-list strong { display: block; margin: 16px 0 8px; color: #1e293b; }
+        .welcome-list ul, .welcome-list ol { padding-left: 20px; margin: 8px 0; }
+        .welcome-list li { margin-bottom: 6px; }
+        .start-btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 9999px;
+            font-size: 1.05rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            margin-top: 12px;
+        }
+        .start-btn:hover { background: #1a2634; }
+    </style>
+</head>
+<body>
+
+    <!-- Welcome Modal -->
+    <div class="welcome-modal" id="welcomeModal">
+        <div class="welcome-content">
+            <span class="welcome-close" onclick="closeWelcome()">×</span>
+            <h2>Halo! Saya Dio'</h2>
+            <p>Saya asisten khusus untuk menyelesaikan soal <strong>TURUNAN</strong> dari gambar.</p>
+            
+            <strong>Cara menggunakan:</strong>
+            <ol class="welcome-list">
+                <li>Klik area upload atau drag & drop gambar soal</li>
+                <li>Tunggu Dio' membaca soal dari gambar</li>
+                <li>Dapatkan solusi lengkap dengan langkah-langkahnya</li>
+            </ol>
+
+            <strong>Contoh soal yang bisa diproses:</strong>
+            <ul class="welcome-list">
+                <li>Turunan f(x) = 3x² + 2x - 5</li>
+                <li>Turunan sin(2x)</li>
+                <li>Turunan (x² + 1)³</li>
+                <li>Mencari turunan pertama</li>
+            </ul>
+
+            <button class="start-btn" onclick="closeWelcome()">Mulai Sekarang</button>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="header-text">
+                <h1>Dio'</h1>
+                <p>Scanner & Solver Soal Turunan</p>
+            </div>
+        </div>
+       
+        <div class="system-note">
+            📸 Upload gambar soal turunan, Dio' akan membaca dan menyelesaikannya
+        </div>
+       
+        <div class="chat-messages" id="chat-messages">
+            <div class="message assistant">
+                <div class="message-header">DIO'</div>
+                <div class="message-content">
+                    Halo! Saya Dio', asisten khusus untuk menyelesaikan soal TURUNAN dari gambar.
+                </div>
+                <div class="timestamp">Just now</div>
+            </div>
+        </div>
+
+        <div class="image-preview-section" id="image-preview-section">
+            <div class="preview-container">
+                <img src="" alt="Preview" class="preview-img" id="preview-img">
+                <div class="preview-info">
+                    <h4>Gambar soal siap diproses</h4>
+                    <p>Klik "Proses Gambar" untuk menganalisa soal turunan</p>
+                </div>
+                <button class="remove-image" onclick="removeImage()">Hapus</button>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="upload-area" id="upload-area" onclick="document.getElementById('image-upload').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">Klik untuk upload gambar soal turunan</div>
+                <div class="upload-hint">atau drag & drop gambar di sini</div>
+                <input type="file" id="image-upload" accept="image/*" style="display: none" onchange="handleImageUpload(this)">
+            </div>
+           
+            <div class="action-buttons">
+                <button class="secondary-btn" onclick="resetUpload()" id="reset-btn" style="display: none;">
+                    ↺ Upload Baru
+                </button>
+                <button id="send-button" onclick="processImage()" disabled>
+                    🔍 Proses Gambar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="image-modal" onclick="closeModal()">
+        <span class="modal-close">×</span>
+        <img id="modal-image" src="" alt="Full size">
+    </div>
+
+    <script>
+        // ── Welcome modal control ──
+        function showWelcome() {
+            if (!localStorage.getItem('dioWelcomeShown')) {
+                document.getElementById('welcomeModal').classList.add('active');
+            }
+        }
+        function closeWelcome() {
+            document.getElementById('welcomeModal').classList.remove('active');
+            localStorage.setItem('dioWelcomeShown', 'true');
+        }
+        window.addEventListener('load', () => {
+            setTimeout(showWelcome, 400);
+        });
+
+        // ── Kode asli + perubahan kecil untuk Markdown & membersihkan $$ ──
+        const API_KEY = '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';
+        const API_URL = 'https://router.huggingface.co/v1/chat/completions';
+       
+        const chatMessages = document.getElementById('chat-messages');
+        const sendButton = document.getElementById('send-button');
+        const resetBtn = document.getElementById('reset-btn');
+        const imagePreviewSection = document.getElementById('image-preview-section');
+        const previewImg = document.getElementById('preview-img');
+        const uploadArea = document.getElementById('upload-area');
+        let currentImage = null;
+        let isProcessing = false;
+
+        const SYSTEM_PROMPT = `Kamu adalah Dio', asisten AI yang SPESIALIS dalam membaca dan menyelesaikan soal TURUNAN (diferensial) dari GAMBAR.
+        TUGAS UTAMA:
+        1. Baca soal turunan dari gambar yang diupload
+        2. Identifikasi fungsi yang akan diturunkan
+        3. Selesaikan dengan langkah-langkah yang jelas
+        4. Berikan jawaban akhir
+        ATURAN PENTING:
+        - Hanya memproses soal tentang TURUNAN (diferensial)
+        - Jika gambar bukan soal turunan, tolak dengan sopan
+        - Tampilkan langkah-langkah penyelesaian secara berurutan
+        - Gunakan **notasi tebal** untuk judul langkah dan jawaban akhir
+        - Gunakan *miring* untuk penjelasan tambahan
+        - Gunakan \`code\` untuk rumus sederhana
+        - JANGAN gunakan $$...$$ atau \\( ... \\) atau \[ ... \] sama sekali
+        - Tulis rumus dengan format teks biasa contoh: d/dx (u/v) = (u'v - uv') / v²
+        FORMAT JAWABAN:
+        **📖 SOAL:** [tulis ulang soal dari gambar]
+
+        **📝 LANGKAH-LANGKAH:**
+        1. [langkah 1]
+        2. [langkah 2]
+        dst
+
+        **✅ JAWABAN AKHIR:** [hasil akhir]
+
+        Selalu gunakan bahasa Indonesia yang baik dan benar.`;
+
+        function formatTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function cleanLatex(text) {
+            // Hapus $$...$$, \[...\], \(...\), \( ... \)
+            return text
+                .replace(/\$\$([\s\S]*?)\$\$/g, '$1')
+                .replace(/\\\[(.*?)\\\]/g, '$1')
+                .replace(/\\\((.*?)\\\)/g, '$1')
+                .replace(/\\begin\{.*?\}.*?\\end\{.*?\}/gs, '[rumus kompleks – lihat langkah]')
+                .trim();
+        }
+
+        function addMessage(content, role, imageUrl = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'message-header';
+            headerDiv.textContent = role === 'user' ? 'ANDA' : 'DIO\'';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+
+            // Bersihkan LaTeX dulu, lalu render Markdown
+            let cleaned = cleanLatex(content);
+            contentDiv.innerHTML = marked.parse(cleaned);
+
+            messageDiv.appendChild(headerDiv);
+            messageDiv.appendChild(contentDiv);
+
+            if (imageUrl) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.className = 'message-image';
+                img.onclick = () => openModal(imageUrl);
+                messageDiv.appendChild(img);
+            }
+
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'timestamp';
+            timeDiv.textContent = formatTime();
+            messageDiv.appendChild(timeDiv);
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // ── Fungsi-fungsi lain tetap sama persis ──
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'message assistant';
+            indicator.id = 'typing-indicator';
+           
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'message-header';
+            headerDiv.textContent = 'DIO\'';
+           
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = '<span></span><span></span><span></span>';
+           
+            indicator.appendChild(headerDiv);
+            indicator.appendChild(typingDiv);
+            chatMessages.appendChild(indicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            chatMessages.appendChild(errorDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            uploadArea.style.borderColor = '#2c3e50';
+            uploadArea.style.background = '#f1f3f5';
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            uploadArea.style.borderColor = '#ced4da';
+            uploadArea.style.background = '#f8f9fa';
+            const file = event.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                processFile(file);
+            } else {
+                showError('File harus berupa gambar');
+            }
+        }
+
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (file) processFile(file);
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImage = e.target.result;
+                previewImg.src = currentImage;
+                imagePreviewSection.classList.add('active');
+                uploadArea.style.display = 'none';
+                resetBtn.style.display = 'flex';
+                sendButton.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            currentImage = null;
+            imagePreviewSection.classList.remove('active');
+            uploadArea.style.display = 'block';
+            resetBtn.style.display = 'none';
+            sendButton.disabled = true;
+            document.getElementById('image-upload').value = '';
+        }
+
+        function resetUpload() {
+            removeImage();
+        }
+
+        function openModal(imageUrl) {
+            document.getElementById('modal-image').src = imageUrl;
+            document.getElementById('image-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('image-modal').classList.remove('active');
+        }
+
+        async function processImage() {
+            if (!currentImage || isProcessing) return;
+            addMessage('📤 Mengirim gambar soal turunan...', 'user', currentImage);
+            showTypingIndicator();
+            isProcessing = true;
+            sendButton.disabled = true;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'moonshotai/Kimi-K2.5:novita',
+                        messages: [
+                            { role: 'system', content: SYSTEM_PROMPT },
+                            {
+                                role: 'user',
+                                content: [
+                                    { type: 'text', text: 'Tolong baca dan selesaikan soal turunan dari gambar ini. Berikan langkah-langkah penyelesaiannya.' },
+                                    { type: 'image_url', image_url: { url: currentImage } }
+                                ]
+                            }
+                        ],
+                        max_tokens: 1500,
+                        temperature: 0.2,
+                    }),
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const result = await response.json();
+                removeTypingIndicator();
+
+                if (result?.choices?.[0]?.message?.content) {
+                    addMessage(result.choices[0].message.content, 'assistant');
+                } else {
+                    addMessage('Maaf, Dio\' tidak bisa membaca soal dari gambar ini. Pastikan gambar berisi soal turunan yang jelas.', 'assistant');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                removeTypingIndicator();
+                showError('Terjadi kesalahan. Silakan coba lagi.');
+            } finally {
+                isProcessing = false;
+                sendButton.disabled = false;
+            }
+        }
+
+        document.addEventListener('paste', function(event) {
+            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            for (const item of items) {
+                if (item.type.indexOf('image') === 0) {
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        currentImage = e.target.result;
+                        previewImg.src = currentImage;
+                        imagePreviewSection.classList.add('active');
+                        uploadArea.style.display = 'none';
+                        resetBtn.style.display = 'flex';
+                        sendButton.disabled = false;
+                    };
+                    reader.readAsDataURL(blob);
+                    break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
